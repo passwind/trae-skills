@@ -29,14 +29,18 @@ Please refer to `https://github.com/sorayuki/obs-multi-rtmp` for development exa
 ## Build Instructions
 This project is based on the OBS plugin template. Qt6 and the front API are enabled.
 
-- **Configure**: `cmake --preset macos`
-- **Build**: `cmake --build --preset macos --config Debug`
+- **Configure**: Prefer `cmake --preset macos-user` when `CMakeUserPresets.json` exists; otherwise use `cmake --preset macos`.
+- **Build**: Prefer `cmake --build --preset macos-user`; otherwise use `cmake --build --preset macos`.
 - **Output**: Build results are located in the `build_macos` directory.
 - **Restrictions**: 
   - DO NOT use generic `cmake` build commands. 
   - Xcode build debugging can be used if absolutely necessary.
   - Do NOT use `clang` for compilation processing due to include path issues.
 - **Dependencies**: All OBS, Qt, and related dependency source files are located in the `.deps` directory. Check the CMake cache if necessary.
+
+Notes:
+
+- The repository's `CMakePresets.json` defines the `macos` preset with Xcode generator and `RelWithDebInfo` configuration. If `Debug` is needed, prefer a local preset in `CMakeUserPresets.json` rather than changing shared presets.
 
 ## Convention: "cmake"
 
@@ -88,7 +92,7 @@ Command template (placeholders only):
 
 Behavior:
 
-1. If a project-local preset exists (e.g., `macos-local`), prefer it.
+1. If `CMakeUserPresets.json` exists and defines a usable preset (e.g., `macos-user`), prefer it.
 2. Otherwise, use `cmake --preset macos` and append configured `-D` flags.
 3. For missing required values, ask the user to provide them or to export them as environment variables.
 
