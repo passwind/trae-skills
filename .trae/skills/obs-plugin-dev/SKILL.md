@@ -16,6 +16,39 @@ Please refer to `https://github.com/sorayuki/obs-multi-rtmp` for development exa
 3. **UI Integration**: The settings window must use a dock widget, loaded via the OBS dock menu or a specified menu.
 4. **i18n**: The plugin must support internationalization (i18n).
 
+## How to Use This Skill
+
+This skill is most effective when the user uses short, consistent trigger phrases and expects a predictable set of outputs (files to add/modify, i18n updates, and build steps).
+
+Suggested trigger phrases:
+
+- "Create a dock settings panel"
+- "Add a new UI component"
+- "Add i18n strings"
+- "Add an OBS menu entry to open the dock"
+- "cmake" / "build"
+- "Add logging around <feature>"
+
+Expected output shape:
+
+- A short list of files to be added/changed.
+- A checklist of required follow-ups (i18n, registration, src list, build).
+- A safe build command using presets, without leaking secrets.
+
+## Project Defaults
+
+Defaults should match the rest of the project. If not specified, use:
+
+- Default code directory: `src`
+- Default UI directory: `ui`
+- Default name prefix: use the existing project-wide prefix (otherwise use `tt` as a placeholder prefix)
+
+If the user provides project-specific defaults, apply them consistently to:
+
+- Filenames and class names
+- Dock object name / IDs
+- Menu text i18n keys
+
 ## Development Conventions
 1. **Language & Headers**: Use C++ for development. Header files must use the `.hpp` extension and include the `#pragma once` directive.
 2. **Language**: All comments and logs must be in English.
@@ -25,6 +58,44 @@ Please refer to `https://github.com/sorayuki/obs-multi-rtmp` for development exa
    *Example*: In `ttoutput-config-dialog.cpp`, add `#include "moc_ttoutput-config-dialog.cpp"`.
 6. **CMakeLists.txt**: Avoid modifying `CMakeLists.txt` unless you are updating the `src` file list.
 7. **File Endings**: All C/C++ files must end with an empty newline to prevent compilation errors.
+
+## Recommended Structure
+
+- `src/`: plugin entry points and core logic (OBS-facing integration)
+- `ui/`: Qt widgets/dialogs/docks, one component per class/file pair
+- `data/locale/`: translation files used by OBS
+
+UI layering rules:
+
+- UI should not directly own streaming/output logic.
+- Put non-UI logic into a controller/service class in `src/`, and call it from `ui/`.
+
+## Dock Widget Convention
+
+- Use a single dock instance (reuse if already created).
+- Dock title and menu text must be i18n-backed.
+- Prefer "hide on close" behavior (close button hides the dock; plugin keeps ownership) unless the user explicitly wants destruction.
+- On plugin unload: remove the dock and delete the widget safely.
+
+## i18n Convention
+
+- No hardcoded UI strings (window titles, labels, tooltips, error messages).
+- Use a consistent key namespace, for example: `<prefix>.<module>.<component>.<name>`.
+- When adding UI text, update:
+  - `data/locale/en-US.ini`
+  - any other languages present in the project (at least keep keys in sync)
+
+## Checklist: Adding a New Dock Panel
+
+- Add new Qt widget class under `ui/` (one class per file pair).
+- If using signals/slots: include `moc_<cpp_file_name>.cpp` in the `.cpp`.
+- Register the dock with OBS and wire up a menu action to toggle visibility.
+- Add i18n keys for:
+  - dock title
+  - menu item text
+  - any visible UI labels
+- Ensure all new/modified `.cpp/.hpp` files end with a trailing newline.
+- Build using presets.
 
 ## Build Instructions
 This project is based on the OBS plugin template. Qt6 and the front API are enabled.
@@ -63,7 +134,7 @@ Example structure (placeholders only):
   "version": 5,
   "configurePresets": [
     {
-      "name": "macos-local",
+      "name": "macos-user",
       "inherits": "macos",
       "cacheVariables": {
         "YOUTUBE_API_CLIENT_ID": "$env{YOUTUBE_API_CLIENT_ID}",
@@ -79,7 +150,7 @@ Example structure (placeholders only):
 
 Then run:
 
-- `cmake --preset macos-local`
+- `cmake --preset macos-user`
 
 Alternative (ad-hoc): pass `-D` flags on the command line
 
@@ -95,6 +166,18 @@ Behavior:
 1. If `CMakeUserPresets.json` exists and defines a usable preset (e.g., `macos-user`), prefer it.
 2. Otherwise, use `cmake --preset macos` and append configured `-D` flags.
 3. For missing required values, ask the user to provide them or to export them as environment variables.
+
+## Convention: "build"
+
+Interpretation:
+
+- When the user says "build", they want to compile using the preset build configuration.
+- Prefer `cmake --build --preset macos-user` when available; otherwise use `cmake --build --preset macos`.
+
+Behavior:
+
+- Do not switch generators or call generic build commands.
+- If a build fails, inspect the CMake cache and preset selection before changing code.
 
 ## Git Workflow
 After a successful build, commit the changes to Git:
