@@ -58,6 +58,7 @@ If the user provides project-specific defaults, apply them consistently to:
    *Example*: In `ttoutput-config-dialog.cpp`, add `#include "moc_ttoutput-config-dialog.cpp"`.
 6. **CMakeLists.txt**: Avoid modifying `CMakeLists.txt` unless you are updating the `src` file list.
 7. **File Endings**: All C/C++ files must end with an empty newline to prevent compilation errors.
+8. **C++ Standard**: Use C++17 and keep the code compatible with the project's compiler and standard library settings. Do not assume newer language/library features unless the toolchain enables them.
 
 ## Recommended Structure
 
